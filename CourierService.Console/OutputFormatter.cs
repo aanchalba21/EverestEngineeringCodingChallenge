@@ -8,10 +8,27 @@ public sealed class OutputFormatter
         TextWriter writer,
         IReadOnlyList<CostEstimationResult> results)
     {
-        foreach (var result in results)
+        const string pkgIdHeader = "PKG_ID";
+        const string discountHeader = "DISCOUNT";
+        const string totalCostHeader = "TOTAL_COST";
+
+        var idWidth = Math.Max(pkgIdHeader.Length, results.Count == 0 ? 0 : results.Max(r => r.Package.Id.Length));
+        var discountStrings = results.Select(r => $"₹{r.DiscountAmount:0}").ToList();
+        var totalCostStrings = results.Select(r => $"₹{r.TotalCost:0}").ToList();
+
+        var discountWidth = Math.Max(discountHeader.Length, discountStrings.Count == 0 ? 0 : discountStrings.Max(s => s.Length));
+        var totalCostWidth = Math.Max(totalCostHeader.Length, totalCostStrings.Count == 0 ? 0 : totalCostStrings.Max(s => s.Length));
+
+        writer.WriteLine(
+            $"{pkgIdHeader.PadRight(idWidth)} {discountHeader.PadLeft(discountWidth)} {totalCostHeader.PadLeft(totalCostWidth)}");
+
+        for (var i = 0; i < results.Count; i++)
         {
-            writer.WriteLine(
-                $"{result.Package.Id} {result.DiscountAmount:0} {result.TotalCost:0}");
+            var result = results[i];
+            var id = result.Package.Id.PadRight(idWidth);
+            var discount = discountStrings[i].PadLeft(discountWidth);
+            var totalCost = totalCostStrings[i].PadLeft(totalCostWidth);
+            writer.WriteLine($"{id} {discount} {totalCost}");
         }
     }
 
@@ -20,12 +37,40 @@ public sealed class OutputFormatter
         IReadOnlyList<CostEstimationResult> results,
         IReadOnlyDictionary<string, double> deliveryTimes)
     {
-        foreach (var result in results)
+        const string pkgIdHeader = "PKG_ID";
+        const string discountHeader = "DISCOUNT";
+        const string totalCostHeader = "TOTAL_COST";
+        const string timeHeader = "ESTIMATED_DELIVERY_TIME";
+
+        var idWidth = Math.Max(pkgIdHeader.Length, results.Count == 0 ? 0 : results.Max(r => r.Package.Id.Length));
+        var discountStrings = results.Select(r => $"₹{r.DiscountAmount:0}").ToList();
+        var totalCostStrings = results.Select(r => $"₹{r.TotalCost:0}").ToList();
+
+        var discountWidth = Math.Max(discountHeader.Length, discountStrings.Count == 0 ? 0 : discountStrings.Max(s => s.Length));
+        var totalCostWidth = Math.Max(totalCostHeader.Length, totalCostStrings.Count == 0 ? 0 : totalCostStrings.Max(s => s.Length));
+
+        var timeStrings = results
+            .Select(r =>
+            {
+                var time = deliveryTimes[r.Package.Id];
+                var roundedTime = Math.Round(time, 2, MidpointRounding.AwayFromZero);
+                return $"{roundedTime:0.00} hours";
+            })
+            .ToList();
+        var timeWidth = Math.Max(timeHeader.Length, timeStrings.Count == 0 ? 0 : timeStrings.Max(t => t.Length));
+
+        writer.WriteLine(
+            $"{pkgIdHeader.PadRight(idWidth)} {discountHeader.PadLeft(discountWidth)} {totalCostHeader.PadLeft(totalCostWidth)} {timeHeader.PadLeft(timeWidth)}");
+
+        for (var i = 0; i < results.Count; i++)
         {
-            var time = deliveryTimes[result.Package.Id];
-            var roundedTime = Math.Round(time, 2, MidpointRounding.AwayFromZero);
-            writer.WriteLine(
-                $"{result.Package.Id} {result.DiscountAmount:0} {result.TotalCost:0} {roundedTime:0.00}");
+            var result = results[i];
+            var id = result.Package.Id.PadRight(idWidth);
+            var discount = discountStrings[i].PadLeft(discountWidth);
+            var totalCost = totalCostStrings[i].PadLeft(totalCostWidth);
+            var time = timeStrings[i].PadLeft(timeWidth);
+
+            writer.WriteLine($"{id} {discount} {totalCost} {time}");
         }
     }
 }
